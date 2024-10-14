@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>目的地を地図で選択</title>
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+        #directions {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>地図をクリックして目的地を選択</h1>
+
+    <label for="start">現在地（緯度,経度）: </label>
+    <input type="text" id="start" value="35.6895,139.6917" placeholder="出発地（例: 35.6895,139.6917）">
+    <br><br>
+
+    <label for="end">目的地（緯度,経度）: </label>
+    <input type="text" id="end" placeholder="目的地を地図でクリックしてください">
+    <br><br>
+
+    <button onclick="getRouteAndShops()">ルート案内とお店検索</button>
+
+    <div id="directions"></div>
+    <div id="map"></div>
+
+    <!-- Google Maps APIの読み込み -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap" async defer></script>
+    <script>
+        let map;
+        let directionsService;
+        let directionsRenderer;
+        let destinationMarker;
+
+        // 地図を初期化する関数
+        function initMap() {
+            const initialPosition = { lat: 35.6895, lng: 139.6917 };
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: initialPosition,
+                zoom: 13,
+            });
+
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+
+            // 地図上でクリックした場所を目的地として設定
+            map.addListener("click", function(event) {
+                const lat = event.latLng.lat();
+                const lng = event.latLng.lng();
+
+                document.getElementById("end").value = `${lat},${lng}`;
+
+                if (destinationMarker) {
+                    destinationMarker.setMap(null); // 既存のマーカーを削除
+                }
+
+                destinationMarker = new google.maps.Marker({
+                    position: event.latLng,
+                    map: map,
+                    title: "目的地",
+                });
+            });
+        }
+
+        // ルートとお店を取得する関数
+        function getRouteAndShops() {
+            const start = document.getElementById('start').value;
+            const end = document.getElementById('end').value;
+
+            // 1. ルート案内をリクエスト
+            fetch(`http://localhost:5001/get-route?start=${start}&end=${end}`)
+                .then(response => response.json())
+                .then(data => {
+                    // 2. Google Maps Directions APIでルートを描画
+                    const request = {
+                        origin: start,
+                        destination: end,
+                        travelMode: google.maps.TravelMode.DRIVING,
+                    };
+                    directionsService.route(request, function(result, status) {
+                        if (status === google.maps.DirectionsStatus.OK) {
+                            directionsRenderer.setDirections(result);
+                        }
+                    });
+
+                    // 3. 近くのお店の情報を表示
+                    let shopsList = '<h2>ルート近くの店舗:</h2>';
+                    data.forEach(shop => {
+                        shopsList += `<p>${shop.name} - ${shop.address}</p>`;
+                    });
+                    document.getElementById('directions').innerHTML = shopsList;
+                });
+        }
+    </script>
+</body>
+</html>
