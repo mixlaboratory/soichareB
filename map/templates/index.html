@@ -31,7 +31,7 @@
     <div id="map"></div>
 
     <!-- Google Maps APIの読み込み -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAxCklNtorBhrCBHI4uAmQttUrWHhRobM4&callback=initMap" async defer></script>
     <script>
         let map;
         let directionsService;
@@ -49,6 +49,31 @@
             directionsService = new google.maps.DirectionsService();
             directionsRenderer = new google.maps.DirectionsRenderer();
             directionsRenderer.setMap(map);
+
+            // 現在地を取得するコード
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    // 現在地を出発地として設定
+                    document.getElementById("start").value = `${lat},${lng}`;
+                    
+                    // 現在地にマーカーを表示
+                    new google.maps.Marker({
+                        position: { lat: lat, lng: lng },
+                        map: map,
+                        title: "現在地",
+                    });
+
+                    // 現在地を地図の中心に設定
+                    map.setCenter({ lat: lat, lng: lng });
+                }, function() {
+                    alert("現在地の取得に失敗しました。");
+                });
+            } else {
+                alert("このブラウザはGeolocation APIに対応していません。");
+            }
 
             // 地図上でクリックした場所を目的地として設定
             map.addListener("click", function(event) {
