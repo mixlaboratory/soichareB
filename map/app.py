@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Google Maps APIキーを設定 (YOUR_GOOGLE_MAPS_API_KEYに置き換えてください)
-GMAPS_API_KEY = 'AIzaSyAxCklNtorBhrCBHI4uAmQttUrWHhRobM4'
+GMAPS_API_KEY = 'API'
 
 # ホームページを表示するルート
 @app.route('/')
