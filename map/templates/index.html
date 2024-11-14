@@ -31,12 +31,13 @@
     <div id="map"></div>
 
     <!-- Google Maps APIの読み込み -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=API&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap" async defer></script>
     <script>
         let map;
         let directionsService;
         let directionsRenderer;
         let destinationMarker;
+        let shopMarkers = [];  // 店舗用のマーカーリスト
 
         // 地図を初期化する関数
         function initMap() {
@@ -118,8 +119,32 @@
                     // 3. 近くのお店の情報を表示
                     let shopsList = '<h2>ルート近くの店舗:</h2>';
                     data.forEach(shop => {
+                        // 店舗情報リストを作成
                         shopsList += `<p>${shop.name} - ${shop.address}</p>`;
+
+                        // 店舗マーカーを作成
+                        const shopLatLng = new google.maps.LatLng(shop.location.lat, shop.location.lng);
+                        const marker = new google.maps.Marker({
+                            position: shopLatLng,
+                            map: map,
+                            title: shop.name,
+                            icon: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',  // 店舗アイコン（青色）
+                        });
+
+                        // 店舗をマーカーリストに追加
+                        shopMarkers.push(marker);
+
+                        // 店舗にクリックイベントを追加
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: `<div><strong>${shop.name}</strong><br>${shop.address}</div>`
+                        });
+
+                        marker.addListener('click', function() {
+                            infoWindow.open(map, marker);
+                        });
                     });
+
+                    // 店舗情報を表示
                     document.getElementById('directions').innerHTML = shopsList;
                 });
         }
