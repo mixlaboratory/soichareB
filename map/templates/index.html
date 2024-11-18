@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>目的地を地図で選択</title>
+    <title>現在地取得とルート案内</title>
     <style>
         #map {
             height: 500px;
@@ -15,35 +15,25 @@
     </style>
 </head>
 <body>
-    <h1>地図をクリックして目的地を選択</h1>
-
-    <label for="start">現在地（緯度,経度）: </label>
-    <input type="text" id="start" value="35.6895,139.6917" placeholder="出発地（例: 35.6895,139.6917）">
-    <br><br>
-
-    <label for="end">目的地（緯度,経度）: </label>
+    <h1>現在地取得とルート案内</h1>
+    <label for="end">目的地（緯度,経度）:</label>
     <input type="text" id="end" placeholder="目的地を地図でクリックしてください">
-    <br><br>
-
-    <button onclick="getRouteAndShops()">ルート案内とお店検索</button>
+    <button onclick="getRouteAndShops()">ルート案内を取得</button>
 
     <div id="directions"></div>
     <div id="map"></div>
 
-    <!-- Google Maps APIの読み込み -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap" async defer></script>
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=API"></script>
     <script>
-        let map;
-        let directionsService;
-        let directionsRenderer;
-        let destinationMarker;
-        let shopMarkers = [];  // 店舗用のマーカーリスト
+        let map, directionsService, directionsRenderer;
+        let currentPosition, destinationMarker, currentLocationMarker;
+        let shopMarkers = [];
 
-        // 地図を初期化する関数
+        // 地図の初期化
         function initMap() {
-            const initialPosition = { lat: 35.6895, lng: 139.6917 };
             map = new google.maps.Map(document.getElementById("map"), {
-                center: initialPosition,
+                center: { lat: 35.6895, lng: 139.6917 }, // 東京をデフォルト
                 zoom: 13,
             });
 
@@ -51,103 +41,135 @@
             directionsRenderer = new google.maps.DirectionsRenderer();
             directionsRenderer.setMap(map);
 
-            // 現在地を取得するコード
+            // 現在地を取得
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        currentPosition = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude,
+                        };
 
-                    // 現在地を出発地として設定
-                    document.getElementById("start").value = `${lat},${lng}`;
-                    
-                    // 現在地にマーカーを表示
-                    new google.maps.Marker({
-                        position: { lat: lat, lng: lng },
-                        map: map,
-                        title: "現在地",
-                    });
+                        // 現在地を地図の中心に設定
+                        map.setCenter(currentPosition);
 
-                    // 現在地を地図の中心に設定
-                    map.setCenter({ lat: lat, lng: lng });
-                }, function() {
-                    alert("現在地の取得に失敗しました。");
-                });
+                        // 現在地にマーカーを表示
+                        currentLocationMarker = new google.maps.Marker({
+                            position: currentPosition,
+                            map: map,
+                            title: "現在地",
+                            icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png", // 青色のマーカー
+                        });
+                    },
+                    () => {
+                        alert("現在地の取得に失敗しました。");
+                    }
+                );
             } else {
                 alert("このブラウザはGeolocation APIに対応していません。");
             }
 
-            // 地図上でクリックした場所を目的地として設定
-            map.addListener("click", function(event) {
+            // 地図クリックで目的地を設定
+            map.addListener("click", (event) => {
                 const lat = event.latLng.lat();
                 const lng = event.latLng.lng();
-
                 document.getElementById("end").value = `${lat},${lng}`;
-
-                if (destinationMarker) {
-                    destinationMarker.setMap(null); // 既存のマーカーを削除
-                }
-
-                destinationMarker = new google.maps.Marker({
-                    position: event.latLng,
-                    map: map,
-                    title: "目的地",
-                });
+                setDestinationMarker(lat, lng);
             });
         }
 
-        // ルートとお店を取得する関数
-        function getRouteAndShops() {
-            const start = document.getElementById('start').value;
-            const end = document.getElementById('end').value;
+        // 目的地マーカーを設定
+        function setDestinationMarker(lat, lng) {
+            if (destinationMarker) {
+                destinationMarker.setMap(null); // 既存のマーカーを削除
+            }
 
-            // 1. ルート案内をリクエスト
-            fetch(`http://localhost:5001/get-route?start=${start}&end=${end}`)
-                .then(response => response.json())
-                .then(data => {
-                    // 2. Google Maps Directions APIでルートを描画
-                    const request = {
-                        origin: start,
-                        destination: end,
-                        travelMode: google.maps.TravelMode.DRIVING,
-                    };
-                    directionsService.route(request, function(result, status) {
-                        if (status === google.maps.DirectionsStatus.OK) {
-                            directionsRenderer.setDirections(result);
-                        }
-                    });
-
-                    // 3. 近くのお店の情報を表示
-                    let shopsList = '<h2>ルート近くの店舗:</h2>';
-                    data.forEach(shop => {
-                        // 店舗情報リストを作成
-                        shopsList += `<p>${shop.name} - ${shop.address}</p>`;
-
-                        // 店舗マーカーを作成
-                        const shopLatLng = new google.maps.LatLng(shop.location.lat, shop.location.lng);
-                        const marker = new google.maps.Marker({
-                            position: shopLatLng,
-                            map: map,
-                            title: shop.name,
-                            icon: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',  // 店舗アイコン（青色）
-                        });
-
-                        // 店舗をマーカーリストに追加
-                        shopMarkers.push(marker);
-
-                        // 店舗にクリックイベントを追加
-                        const infoWindow = new google.maps.InfoWindow({
-                            content: `<div><strong>${shop.name}</strong><br>${shop.address}</div>`
-                        });
-
-                        marker.addListener('click', function() {
-                            infoWindow.open(map, marker);
-                        });
-                    });
-
-                    // 店舗情報を表示
-                    document.getElementById('directions').innerHTML = shopsList;
-                });
+            destinationMarker = new google.maps.Marker({
+                position: { lat, lng },
+                map: map,
+                title: "目的地",
+                icon: "http://maps.google.com/mapfiles/ms/icons/green-dot.png", // 緑色のマーカー
+            });
         }
+
+        // ルート案内と店舗情報を取得
+        function getRouteAndShops() {
+            if (!currentPosition) {
+                alert("現在地が設定されていません。");
+                return;
+            }
+
+            const start = `${currentPosition.lat},${currentPosition.lng}`;
+            const end = document.getElementById("end").value;
+
+            if (!end) {
+                alert("目的地を設定してください。");
+                return;
+            }
+
+            fetch(`/get-route?start=${start}&end=${end}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    displayRoute(start, end);
+                    displayShops(data);
+                })
+                .catch((error) => alert("ルートまたは店舗情報を取得できませんでした。"));
+        }
+
+        // ルートを描画
+        function displayRoute(start, end) {
+            const request = {
+                origin: start,
+                destination: end,
+                travelMode: google.maps.TravelMode.DRIVING,
+            };
+
+            directionsService.route(request, (result, status) => {
+                if (status === "OK") {
+                    directionsRenderer.setDirections(result);
+                } else {
+                    alert("ルートを描画できませんでした: " + status);
+                }
+            });
+        }
+
+        // 店舗情報を表示
+        function displayShops(shops) {
+            shopMarkers.forEach((marker) => marker.setMap(null));
+            shopMarkers = [];
+
+            shops.forEach((shop) => {
+                const marker = new google.maps.Marker({
+                    position: shop.location,
+                    map: map,
+                    title: shop.name,
+                    icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png", // 赤色のマーカー
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `<div><strong>${shop.name}</strong><br>${shop.address}</div>`,
+                });
+
+                marker.addListener("click", () => {
+                    const confirmVisit = confirm(`${shop.name}に来店しましたか？`);
+                    if (confirmVisit) {
+                        fetch("/visited-shop", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                            body: `place_id=${shop.place_id}`,
+                        })
+                            .then(() => alert("来店情報を記録しました。"))
+                            .catch(() => alert("エラーが発生しました。"));
+                    }
+                });
+
+                shopMarkers.push(marker);
+            });
+        }
+
+        // 初期化
+        window.onload = initMap;
     </script>
 </body>
 </html>
+
