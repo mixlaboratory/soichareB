@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Google Maps APIキーを設定 (YOUR_GOOGLE_MAPS_API_KEYに置き換えてください)
-GMAPS_API_KEY = 'API'
+GMAPS_API_KEY = 'AIzaSyCpG127OxScd2qbLdXlBql4DppcmL6GWYs'
 
 # 来店済み店舗を保存するファイル
 VISITED_SHOPS_FILE = 'visited_shops.json'
