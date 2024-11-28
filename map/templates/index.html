@@ -12,6 +12,18 @@
         #directions {
             margin-top: 20px;
         }
+        /* 店舗情報のインフォウィンドウ */
+        .info-window-content {
+            position: relative;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -24,12 +36,13 @@
     <div id="map"></div>
 
     <!-- Google Maps API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCpG127OxScd2qbLdXlBql4DppcmL6GWYs&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=API&libraries=places"></script>
     <script>
         let map, directionsService, directionsRenderer, distanceMatrixService;
         let currentPosition, destinationMarker, currentLocationMarker;
         let shopMarkers = [];
         const placesService = new google.maps.places.PlacesService(document.createElement("div"));
+        let visitedShops = JSON.parse(localStorage.getItem("visitedShops")) || []; // 来店情報をローカルストレージから取得
 
         // 地図の初期化
         function initMap() {
@@ -142,8 +155,11 @@
             shopMarkers.forEach((marker) => marker.setMap(null));
             shopMarkers = [];
 
-            // 店舗情報をマーカーとして表示
             shops.forEach((shop) => {
+                if (visitedShops.includes(shop.place_id)) {
+                    return; // 既に来店した店舗は表示しない
+                }
+
                 const marker = new google.maps.Marker({
                     position: shop.location,
                     map: map,
@@ -156,22 +172,18 @@
                     { placeId: shop.place_id },
                     (place, status) => {
                         if (status === google.maps.places.PlacesServiceStatus.OK) {
-                            const infoWindowContent = generateInfoWindowContent(place);
+                            const infoWindowContent = generateInfoWindowContent(place, shop.place_id);
 
                             const infoWindow = new google.maps.InfoWindow({
                                 content: infoWindowContent,
                             });
 
-                            // マウスオーバーでインフォウィンドウを表示
-                            marker.addListener("mouseover", () => {
+                            // マーカークリックでインフォウィンドウ表示
+                            marker.addListener("click", () => {
                                 infoWindow.open(map, marker);
                             });
 
-                            // マウスアウトでインフォウィンドウを非表示
-                            marker.addListener("mouseout", () => {
-                                infoWindow.close();
-                            });
-
+                            // マーカーを配列に追加
                             shopMarkers.push(marker);
                         }
                     }
@@ -180,7 +192,7 @@
         }
 
         // インフォウィンドウの内容を生成
-        function generateInfoWindowContent(place) {
+        function generateInfoWindowContent(place, placeId) {
             const isOpen = place.opening_hours?.isOpen() ? "営業中" : "閉店";
             const closingTime = place.opening_hours?.periods?.[0]?.close?.time
                 ? `終了時刻: ${place.opening_hours.periods[0].close.time}`
@@ -188,13 +200,15 @@
             const photo = place.photos?.[0]?.getUrl({ maxWidth: 300, maxHeight: 200 }) || "";
 
             return `
-                <div>
+                <div class="info-window-content">
                     ${photo ? `<img src="${photo}" alt="${place.name}" style="width:100%; max-height:200px; object-fit:cover;">` : ""}
                     <strong>${place.name}</strong><br>
                     ${isOpen} ${closingTime}<br>
                     評価: ${place.rating || "評価なし"} (${place.user_ratings_total || 0} 件)<br>
                     <strong>徒歩: ${getTravelTime(place.geometry.location, "WALKING")}</strong><br>
-                    <strong>車: ${getTravelTime(place.geometry.location, "DRIVING")}</strong>
+                    <strong>車: ${getTravelTime(place.geometry.location, "DRIVING")}</strong><br>
+                    <button onclick="markAsVisited('${placeId}', this)">来店したか？</button>
+                    <span class="close-btn" onclick="closeInfoWindow(this)">×</span>
                 </div>
             `;
         }
@@ -220,8 +234,28 @@
             });
         }
 
+        // 来店情報を記録する
+        function markAsVisited(placeId, button) {
+            if (visitedShops.includes(placeId)) {
+                alert("この店舗には既に来店情報があります。");
+                return;
+            }
+
+            visitedShops.push(placeId);
+            localStorage.setItem("visitedShops", JSON.stringify(visitedShops));
+            button.innerText = "来店済み";
+            alert("来店情報を記録しました。");
+        }
+
+        // インフォウィンドウを閉じる
+        function closeInfoWindow(closeButton) {
+            const infoWindowContent = closeButton.parentElement;
+            infoWindowContent.parentElement.style.display = "none";
+        }
+
         // 初期化
         window.onload = initMap;
     </script>
 </body>
 </html>
+
