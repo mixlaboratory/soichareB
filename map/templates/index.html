@@ -36,7 +36,7 @@
     <div id="map"></div>
 
     <!-- Google Maps API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=API&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=&libraries=places"></script>
     <script>
         let map, directionsService, directionsRenderer, distanceMatrixService;
         let currentPosition, destinationMarker, currentLocationMarker;
@@ -170,9 +170,9 @@
                 // 詳細情報を取得
                 placesService.getDetails(
                     { placeId: shop.place_id },
-                    (place, status) => {
+                    async (place, status) => {
                         if (status === google.maps.places.PlacesServiceStatus.OK) {
-                            const infoWindowContent = generateInfoWindowContent(place, shop.place_id);
+                            const infoWindowContent = await generateInfoWindowContent(place, shop.place_id);
 
                             const infoWindow = new google.maps.InfoWindow({
                                 content: infoWindowContent,
@@ -192,12 +192,16 @@
         }
 
         // インフォウィンドウの内容を生成
-        function generateInfoWindowContent(place, placeId) {
+        async function generateInfoWindowContent(place, placeId) {
             const isOpen = place.opening_hours?.isOpen() ? "営業中" : "閉店";
             const closingTime = place.opening_hours?.periods?.[0]?.close?.time
                 ? `終了時刻: ${place.opening_hours.periods[0].close.time}`
                 : "";
             const photo = place.photos?.[0]?.getUrl({ maxWidth: 300, maxHeight: 200 }) || "";
+
+            // 所要時間を非同期で取得
+            const walkingTime = await getTravelTime(place.geometry.location, "WALKING");
+            const drivingTime = await getTravelTime(place.geometry.location, "DRIVING");
 
             return `
                 <div class="info-window-content">
@@ -205,13 +209,15 @@
                     <strong>${place.name}</strong><br>
                     ${isOpen} ${closingTime}<br>
                     評価: ${place.rating || "評価なし"} (${place.user_ratings_total || 0} 件)<br>
-                    <strong>徒歩: ${getTravelTime(place.geometry.location, "WALKING")}</strong><br>
-                    <strong>車: ${getTravelTime(place.geometry.location, "DRIVING")}</strong><br>
+                    <strong>徒歩: ${walkingTime}</strong><br>
+                    <strong>車: ${drivingTime}</strong><br>
                     <button onclick="markAsVisited('${placeId}', this)">来店したか？</button>
                     <span class="close-btn" onclick="closeInfoWindow(this)">×</span>
                 </div>
             `;
         }
+
+
 
         // 現在地から所要時間を取得
         function getTravelTime(destination, mode) {
