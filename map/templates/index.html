@@ -4,25 +4,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>現在地取得とルート案内</title>
+    <!--link href="style.css" rel="stylesheet"-->
     <style>
+        body {
+            font-family: Meiryo, sans-serif;
+            margin: 50px;
+            padding: 0;
+            box-sizing: border-box;
+            line-height: 1.6;
+            background-color: #b5fff5;
+        }
+
+        h1 {
+            text-align: center;
+            color: #000000;
+            margin: 20px 0;
+        }
+
+        label, input, button {
+            font-size: 16px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            color: #000000;
+        }
+
+        #end {
+            padding: 10px;
+            width: calc(100% - 20px);
+            margin: 0 10px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #3b4cff;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #directions {
+            margin: 20px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
         #map {
             height: 500px;
-            width: 100%;
+            width: 80%;
+            margin: auto;
+            border: 1px solid #ccc;
         }
-        #directions {
-            margin-top: 20px;
-        }
+
         /* 店舗情報のインフォウィンドウ */
         .info-window-content {
             position: relative;
+            font-size: 14px;
+            color: #da2b37;
         }
+
+        .info-window-content img {
+            display: block;
+            max-width: 100%;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .info-window-content strong {
+            font-size: 16px;
+            color: #000;
+        }
+
+        .info-window-content button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            font-size: 14px;
+            color: #fff;
+            background-color: #3b4cff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .info-window-content button:hover {
+            background-color: #0056b3;
+        }
+
         .close-btn {
             position: absolute;
             top: 10px;
             right: 10px;
             font-size: 18px;
             cursor: pointer;
-            color: red;
+            color: #ff0000;
+            font-weight: bold;
         }
     </style>
 </head>
