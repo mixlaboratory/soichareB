@@ -8,7 +8,6 @@
     <style>
         body {
             font-family: Meiryo, sans-serif;
-            margin: 50px;
             padding: 0;
             box-sizing: border-box;
             line-height: 1.6;
@@ -21,16 +20,6 @@
             margin: 20px 0;
         }
 
-        label, input, button {
-            font-size: 16px;
-        }
-
-        label {
-            display: block;
-            margin: 10px 0 5px;
-            color: #000000;
-        }
-
         #end {
             padding: 10px;
             width: calc(100% - 20px);
@@ -40,31 +29,23 @@
         }
 
         button {
-            padding: 10px 20px;
+            margin: auto;
+            padding: 10px;
             border: none;
             background-color: #3b4cff;
             color: #fff;
             border-radius: 4px;
             cursor: pointer;
-            margin: 10px;
         }
 
         button:hover {
             background-color: #0056b3;
         }
 
-        #directions {
-            margin: 20px;
-            padding: 10px;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
         #map {
             height: 500px;
-            width: 80%;
+            width: 100%;
+            padding-top: 20px;
             margin: auto;
             border: 1px solid #ccc;
         }
@@ -112,15 +93,45 @@
             color: #ff0000;
             font-weight: bold;
         }
+
+    /* スマホ向けのスタイル */
+    /*@media screen and (max-width: 768px) {
+        body {
+            font-size: 14px;
+            padding: 10px;
+            margin:auto;
+        }
+
+        h1 {
+            font-size: 18px;
+            text-align: center;
+        }
+
+        #map {
+            height: 50vh;
+            padding-top: 20px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+    }*/
     </style>
 </head>
 <body>
     <h1>現在地取得とルート案内</h1>
-    <label for="end">目的地（緯度,経度）:</label>
-    <input type="text" id="end" placeholder="目的地を地図でクリックしてください">
+    
     <button onclick="getRouteAndShops()">ルート案内を取得</button>
 
-    <div id="directions"></div>
     <div id="map"></div>
 
     <!-- Google Maps API -->
